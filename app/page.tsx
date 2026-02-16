@@ -1,11 +1,16 @@
 'use client'
 
+'use client'
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Activity, DollarSign, Server, CheckCircle, Clock, AlertCircle, RefreshCw } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Activity, DollarSign, Server, CheckCircle, Clock, AlertCircle, RefreshCw, Plus, FileText } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 interface Task {
@@ -43,6 +48,9 @@ export default function Dashboard() {
   const [logs, setLogs] = useState<Log[]>([])
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
+  const [newTask, setNewTask] = useState({ title: '', description: '' })
+  const [newCost, setNewCost] = useState({ amount: '', description: '' })
+  const [newLog, setNewLog] = useState({ message: '', level: 'info' })
 
   const fetchData = async () => {
     try {
@@ -68,6 +76,60 @@ export default function Dashboard() {
       console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const createTask = async () => {
+    if (!newTask.title.trim()) return
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTask)
+      })
+      if (response.ok) {
+        setNewTask({ title: '', description: '' })
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error creating task:', error)
+    }
+  }
+
+  const createCost = async () => {
+    if (!newCost.amount || !newCost.description.trim()) return
+    try {
+      const response = await fetch('/api/costs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(newCost.amount),
+          description: newCost.description
+        })
+      })
+      if (response.ok) {
+        setNewCost({ amount: '', description: '' })
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error creating cost:', error)
+    }
+  }
+
+  const createLog = async () => {
+    if (!newLog.message.trim()) return
+    try {
+      const response = await fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLog)
+      })
+      if (response.ok) {
+        setNewLog({ message: '', level: 'info' })
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error creating log:', error)
     }
   }
 
@@ -164,22 +226,57 @@ export default function Dashboard() {
       </div>
 
       <Tabs defaultValue="tasks" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="tasks">Panel de Tareas</TabsTrigger>
           <TabsTrigger value="metrics">Métricas del Sistema</TabsTrigger>
-          <TabsTrigger value="logs">Logs en Vivo</TabsTrigger>
+          <TabsTrigger value="logs">Logs del Sistema</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tasks" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Tareas Recientes</CardTitle>
-              <CardDescription>Estado de las tareas activas y completadas</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Tareas del Sistema</CardTitle>
+                  <CardDescription>Gestión de tareas activas y completadas</CardDescription>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nueva Tarea
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Crear Nueva Tarea</DialogTitle>
+                      <DialogDescription>
+                        Añade una nueva tarea al sistema de monitoreo.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <Input
+                        placeholder="Título de la tarea"
+                        value={newTask.title}
+                        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                      />
+                      <Textarea
+                        placeholder="Descripción (opcional)"
+                        value={newTask.description}
+                        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={createTask}>Crear Tarea</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {tasks.slice(0, 10).map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex items-center space-x-4">
                       {getStatusIcon(task.status)}
                       <div>
@@ -192,6 +289,11 @@ export default function Dashboard() {
                     {getStatusBadge(task.status)}
                   </div>
                 ))}
+                {tasks.length === 0 && (
+                  <div className="text-center text-muted-foreground py-8">
+                    No hay tareas. Crea una nueva para empezar.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -292,17 +394,67 @@ export default function Dashboard() {
         <TabsContent value="logs" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Logs del Sistema</CardTitle>
-              <CardDescription>Stream de logs en tiempo real</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Logs del Sistema</CardTitle>
+                  <CardDescription>Registro de eventos en tiempo real</CardDescription>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Añadir Log
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Añadir Log Manual</DialogTitle>
+                      <DialogDescription>
+                        Registra un evento o mensaje en el sistema de logs.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <Textarea
+                        placeholder="Mensaje del log"
+                        value={newLog.message}
+                        onChange={(e) => setNewLog({ ...newLog, message: e.target.value })}
+                      />
+                      <select
+                        className="w-full p-2 border rounded"
+                        value={newLog.level}
+                        onChange={(e) => setNewLog({ ...newLog, level: e.target.value })}
+                      >
+                        <option value="info">Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
+                      </select>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={createLog}>Añadir Log</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="bg-black text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto">
-                {logs.slice(0, 20).map((log) => (
-                  <p key={log.id}>
-                    [{new Date(log.created_at).toLocaleString()}] {log.message}
-                  </p>
+              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm h-80 overflow-y-auto border">
+                {logs.slice(0, 50).map((log) => (
+                  <div key={log.id} className="mb-1">
+                    <span className="text-blue-400">[{new Date(log.created_at).toLocaleString()}]</span>
+                    <span className={`ml-2 ${
+                      log.level === 'error' ? 'text-red-400' :
+                      log.level === 'warning' ? 'text-yellow-400' : 'text-green-400'
+                    }`}>
+                      [{log.level.toUpperCase()}]
+                    </span>
+                    <span className="ml-2">{log.message}</span>
+                  </div>
                 ))}
-                {logs.length === 0 && <p>No hay logs disponibles</p>}
+                {logs.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">
+                    No hay logs. Añade uno manualmente o espera eventos del sistema.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
