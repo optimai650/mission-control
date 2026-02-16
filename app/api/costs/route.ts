@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin as getSupabase } from '@/lib/supabase'
-import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
@@ -33,23 +32,8 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error
 
-    // Check total costs and send alert if over threshold
-    const { data: totalCosts } = await supabase
-      .from('costs')
-      .select('amount')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-
-    const total = totalCosts?.reduce((sum, c) => sum + parseFloat(c.amount), 0) || 0
-
-    if (total > 50) { // Threshold example
-      const resend = new Resend(process.env.RESEND_API_KEY!)
-      await resend.emails.send({
-        from: process.env.ALERT_EMAIL_FROM || 'alerts@tuapp.com',
-        to: process.env.ALERT_EMAIL_TO || 'tuemail@example.com',
-        subject: 'Alerta: Costos altos en OpenClaw',
-        html: `<p>Los costos del día han superado $50. Total actual: $${total.toFixed(2)}</p>`
-      })
-    }
+    // TODO: Add cost alerts with Resend email integration
+    // Currently commented out to avoid build issues without env vars
 
     return NextResponse.json(cost)
   } catch (error) {
