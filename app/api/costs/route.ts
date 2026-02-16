@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin as supabase } from '@/lib/supabase'
+import { getSupabaseAdmin as getSupabase } from '@/lib/supabase'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
 export async function GET() {
   try {
+    const supabase = getSupabase()
     const { data: costs, error } = await supabase
       .from('costs')
       .select('*')
@@ -21,6 +22,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabase()
     const { amount, description } = await request.json()
 
     const { data: cost, error } = await supabase
@@ -40,9 +42,10 @@ export async function POST(request: NextRequest) {
     const total = totalCosts?.reduce((sum, c) => sum + parseFloat(c.amount), 0) || 0
 
     if (total > 50) { // Threshold example
+      const resend = new Resend(process.env.RESEND_API_KEY!)
       await resend.emails.send({
-        from: 'alerts@tuapp.com',
-        to: 'tuemail@example.com', // Replace with your email
+        from: process.env.ALERT_EMAIL_FROM || 'alerts@tuapp.com',
+        to: process.env.ALERT_EMAIL_TO || 'tuemail@example.com',
         subject: 'Alerta: Costos altos en OpenClaw',
         html: `<p>Los costos del día han superado $50. Total actual: $${total.toFixed(2)}</p>`
       })

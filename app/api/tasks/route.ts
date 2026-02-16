@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin as supabase } from '@/lib/supabase'
+import { getSupabaseAdmin as getSupabase } from '@/lib/supabase'
 
 export async function GET() {
   try {
+    const supabase = getSupabase()
     const { data: tasks, error } = await supabase
       .from('tasks')
       .select('*')
@@ -18,6 +19,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabase()
     const { title, description, status } = await request.json()
 
     const { data: task, error } = await supabase
