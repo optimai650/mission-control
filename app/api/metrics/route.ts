@@ -1,30 +1,22 @@
 import { NextResponse } from 'next/server'
-import osu from 'node-os-utils'
 
 export async function GET() {
   try {
-    const cpu = osu.cpu
-    const mem = osu.mem
-    const drive = osu.drive
-
-    const cpuUsage = await cpu.usage()
-    const memInfo = await mem.info()
-    const driveInfo = await drive.info()
-
+    // Mock metrics for demo purposes (since node-os-utils may not work in serverless environments)
     const metrics = {
       cpu: {
-        usage: cpuUsage,
-        count: cpu.count()
+        usage: Math.floor(Math.random() * 100), // Random 0-100%
+        count: 4
       },
       memory: {
-        used: memInfo.usedMemMb,
-        total: memInfo.totalMemMb,
-        percentage: Math.round((memInfo.usedMemMb / memInfo.totalMemMb) * 100)
+        used: 2048,
+        total: 8192,
+        percentage: 25
       },
       disk: {
-        used: driveInfo.usedGb,
-        total: driveInfo.totalGb,
-        percentage: Math.round((parseFloat(driveInfo.usedGb) / parseFloat(driveInfo.totalGb)) * 100)
+        used: '50',
+        total: '256',
+        percentage: 20
       },
       timestamp: new Date().toISOString()
     }
