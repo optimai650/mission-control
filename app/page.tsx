@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Activity, DollarSign, Server, CheckCircle, Clock, AlertCircle, RefreshCw } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 interface Task {
   id: number
@@ -197,25 +198,88 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="metrics" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Uso de Recursos</CardTitle>
+                <CardDescription>Métricas actuales del sistema</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {metrics ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={[
+                      { name: 'CPU', value: metrics.cpu.usage, color: '#3b82f6' },
+                      { name: 'Memoria', value: metrics.memory.percentage, color: '#10b981' },
+                      { name: 'Disco', value: metrics.disk.percentage, color: '#f59e0b' }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => [`${value}%`, 'Uso']} />
+                      <Bar dataKey="value" fill="#3b82f6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center text-muted-foreground h-64 flex items-center justify-center">Cargando métricas...</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribución de Recursos</CardTitle>
+                <CardDescription>Visión general del uso</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {metrics ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'CPU Usado', value: metrics.cpu.usage, fill: '#3b82f6' },
+                          { name: 'CPU Libre', value: 100 - metrics.cpu.usage, fill: '#e5e7eb' },
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        <Cell key="cpu-used" fill="#3b82f6" />
+                        <Cell key="cpu-free" fill="#e5e7eb" />
+                      </Pie>
+                      <Tooltip formatter={(value) => `${value}%`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center text-muted-foreground h-64 flex items-center justify-center">Cargando métricas...</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Métricas del Sistema</CardTitle>
-              <CardDescription>Monitoreo en tiempo real del rendimiento</CardDescription>
+              <CardTitle>Detalles del Sistema</CardTitle>
             </CardHeader>
             <CardContent>
               {metrics ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{metrics.cpu.usage}%</div>
-                    <p className="text-sm text-muted-foreground">CPU Uso</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <Server className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                    <div className="text-2xl font-bold text-blue-600">{metrics.cpu.usage}%</div>
+                    <p className="text-sm text-gray-600">CPU ({metrics.cpu.count} núcleos)</p>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{metrics.memory.percentage}%</div>
-                    <p className="text-sm text-muted-foreground">Memoria</p>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <Activity className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                    <div className="text-2xl font-bold text-green-600">{metrics.memory.percentage}%</div>
+                    <p className="text-sm text-gray-600">Memoria ({(metrics.memory.used / 1024).toFixed(1)} GB usados)</p>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{metrics.disk.percentage}%</div>
-                    <p className="text-sm text-muted-foreground">Disco</p>
+                  <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                    <Server className="h-8 w-8 mx-auto mb-2 text-yellow-600" />
+                    <div className="text-2xl font-bold text-yellow-600">{metrics.disk.percentage}%</div>
+                    <p className="text-sm text-gray-600">Disco ({metrics.disk.used} GB usados)</p>
                   </div>
                 </div>
               ) : (
