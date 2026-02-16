@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin as getSupabase } from '@/lib/supabase'
 
-const resend = new Resend(process.env.RESEND_API_KEY!)
-
 export async function GET() {
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
   try {
-    const supabase = getSupabase()
     const { data: costs, error } = await supabase
       .from('costs')
       .select('*')
@@ -20,8 +21,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
   try {
-    const supabase = getSupabase()
     const { amount, description } = await request.json()
 
     const { data: cost, error } = await supabase

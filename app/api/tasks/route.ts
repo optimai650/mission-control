@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin as getSupabase } from '@/lib/supabase'
 
 export async function GET() {
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
   try {
-    const supabase = getSupabase()
     const { data: tasks, error } = await supabase
       .from('tasks')
       .select('*')
@@ -18,8 +21,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+  }
   try {
-    const supabase = getSupabase()
     const { title, description, status } = await request.json()
 
     const { data: task, error } = await supabase
