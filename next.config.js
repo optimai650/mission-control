@@ -1,23 +1,53 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  eslint: {
-    ignoreDuringBuilds: true,
+  reactStrictMode: true,
+  swcMinify: true,
+  
+  // Configuración de variables de entorno públicas
+  env: {
+    NEXT_PUBLIC_APP_NAME: 'OpenClaw Mission Control',
+    NEXT_PUBLIC_APP_VERSION: '2.0.0',
   },
-  typescript: {
-    ignoreBuildErrors: true,
+
+  // Optimizaciones de imágenes
+  images: {
+    domains: [],
+    formats: ['image/avif', 'image/webp'],
   },
-  experimental: {
-    serverComponentsExternalPackages: ['sqlite3'],
-  },
-  async rewrites() {
+
+  // Headers de seguridad
+  async headers() {
     return [
       {
-        source: '/api/socket',
-        destination: '/api/socket',
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin'
+          },
+        ],
       },
-    ];
+    ]
   },
-};
 
-module.exports = nextConfig;
+  // Configuración experimental (opcional)
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000'],
+    },
+  },
+}
+
+module.exports = nextConfig
